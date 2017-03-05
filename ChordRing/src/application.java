@@ -6,7 +6,5 @@
 
 public class application {
 
- geia
- geiageiageia
-ksana geia!
+
 }
