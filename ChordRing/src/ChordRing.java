@@ -1,9 +1,10 @@
+import java.security.NoSuchAlgorithmException;
 
 public class ChordRing {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
+		Node n = new Node("1", 1000);
+		System.out.println(n.getId());
 	}
 
 }
