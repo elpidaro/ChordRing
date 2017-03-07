@@ -1,5 +1,4 @@
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -20,7 +19,7 @@ public class Node extends Thread {
 		if (id != 0) return id;
 		else {
 			try {
-				this.calculateID();
+				id = ChordRing.calculate_sha1(myname, ring_size);
 			} catch (NoSuchAlgorithmException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -28,6 +27,7 @@ public class Node extends Thread {
 			return id;
 		}
 	}
+
 
 	public void setId(int id) {
 		this.id = id;
@@ -57,20 +57,5 @@ public class Node extends Thread {
 		this.ring_size = ring_size;
 	}
 	
-	
-	private void calculateID() throws NoSuchAlgorithmException{
-		MessageDigest mDigest = MessageDigest.getInstance("SHA1");
-	    byte[] result = mDigest.digest(myname.getBytes());
-	    StringBuffer sb = new StringBuffer();
-	    for (int i = 0; i < result.length; i++) {
-	    	sb.append(String.format("%02x", result[i]));
-	    }
-	    String asString = sb.toString(); // hexadecimal representation of hash
-	    System.out.println("Hex String of hash = " + asString);
-	    BigInteger value = new BigInteger(asString, 16);
-	    value = value.mod(BigInteger.valueOf(ring_size));  
-	    this.id = value.intValue();
-
-	}
 	
 }
