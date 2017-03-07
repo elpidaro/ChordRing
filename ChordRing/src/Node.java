@@ -1,12 +1,12 @@
-import java.math.BigInteger;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Node extends Thread {
 	private int id = 0, successor, predecessor;
 	private String myname; // "1", "2", ...
 	int ring_size;
-	
+	Map<String, Integer> files = new HashMap<>();
 	
 
 	public Node(String name, int size) {
@@ -26,11 +26,6 @@ public class Node extends Thread {
 			}
 			return id;
 		}
-	}
-
-
-	public void setId(int id) {
-		this.id = id;
 	}
 
 	public int getSuccessor() {
@@ -56,6 +51,7 @@ public class Node extends Thread {
 	public void setRing_size(int ring_size) {
 		this.ring_size = ring_size;
 	}
+	
 	
 	
 }
