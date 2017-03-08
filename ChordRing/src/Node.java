@@ -151,15 +151,36 @@ public class Node extends Thread {
 			 * connected to server.
 			 */
 			Socket channel = serverSocket.accept();
-        	InputStream is = socket.getInputStream();
+        	InputStream is = channel.getInputStream();
             InputStreamReader isr = new InputStreamReader(is);
             BufferedReader br = new BufferedReader(isr);
      
-            //If you read from the input stream, you'll hear what the client has to say.
-            String number = br.readLine();
-            System.out.println("Message received from client is "+number);
+            // If you read from the input stream, you'll hear what the client has to say.
+            String answer = br.readLine();
+            System.out.println("Message received from client is "+answer);
 		
-            
+            /* Checking Answer
+             * if insert ..
+             * if delete ..
+             * if query ..
+             * forward_message(buffer,successor_hostname,PORT_BASE+successor);
+             * Στην forward_message γνωρίζουμε το μήνυμα (buffer), το name του 
+             * διαδόχου (successor_hostname) και το port του διαδόχου (PORT_BASE+successor)
+             * επομένως πρέπει να κάνουμε το connect.
+             */
+	
+            /* Η συνάρτηση connect θα έχει κάτι τέτοιο λογικά (παράδειγμα από 
+             * StackOverflow). Επισυνάπτω και το link!!
+             * Client Just needs the IP of the Server. You have to find out 
+             * the IP of the server and tell the client about it, like: 
+             * String serverName = "IP of server comes here";  
+             * // Indicating the place to put Server's IP
+             * s = new Socket(serverName, 10);
+             * http://stackoverflow.com/questions/28308584/connecting-two-computers-for-client-server-communication-in-java
+             */
+	
+            /* ΣΟΣ!! Υλοποιεί την connect!! θα την χρησιμοποιήσουμε :) Ξέρουμε το address του Socket */
+            //https://docs.oracle.com/javase/7/docs/api/java/net/Socket.html#connect(java.net.SocketAddress)
 	}
 
 	
