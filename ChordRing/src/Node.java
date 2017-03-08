@@ -6,6 +6,7 @@ import java.util.Map;
 import java.io.*;
 //needed for socket setup
 import java.net.Socket;
+import java.net.SocketOption;
 
 public class Node extends Thread {
 	private int myid = 0, successor, predecessor;
@@ -133,6 +134,10 @@ public class Node extends Thread {
 		    System.out.println("Could not listen on port " + port);
 		    System.exit(-1);
 		  }
+		
+		//seting up socket options (similar to setsockopt system call)
+		//public static final SocketOption<Boolean> SO_REUSEADDR ;
+
 	}
 
 	
