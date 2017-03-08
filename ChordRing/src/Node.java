@@ -2,6 +2,11 @@ import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
+//needed for catch(IOException e)
+import java.io.*;
+//needed for socket setup
+import java.net.Socket;
+
 public class Node extends Thread {
 	private int myid = 0, successor, predecessor;
 	private String myname; // "1", "2", ...
@@ -100,5 +105,33 @@ public class Node extends Thread {
 		return answer;
 	}
 	
-	
+	int set_the_socket_and_listen_it () {
+		/* This function is executed by each thread in Chord Ring. 
+		 * It setups a socket for each thread (node) and then wait (remains open
+		 * and listens for incomming connections) until a depart query 
+		 * for this node arrives. 
+		 */
+		
+		// The port in which the connection is set up
+		int port;
+		// The name of the node
+		String hostname = getMyname() ;
+		try{
+			/* Creates a Socket object with the computer name (hostname) 
+			 * and port number (port)
+			 */
+		    Socket socket_setup = new Socket(hostname, port); 
+		  } catch (IOException e) {
+		    System.out.println("Could not listen on port " + port);
+		    System.exit(-1);
+		  }
+	}
+
+	public String getMyname() {
+		return myname;
+	}
+
+	public void setMyname(String myname) {
+		this.myname = myname;
+	}
 }
