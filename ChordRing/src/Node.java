@@ -123,7 +123,7 @@ public class Node extends Thread {
 		
 		// The port in which the connection is set up
 		int port;
-		// The name of the node
+		// The name of this node
 		String hostname = myname ;
 		try{
 			/* Creates a Socket object with the computer name (hostname) 
