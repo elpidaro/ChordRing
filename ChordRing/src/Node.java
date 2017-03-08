@@ -4,6 +4,8 @@ import java.util.Map;
 
 //needed for catch(IOException e)
 import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 //needed for socket setup
 import java.net.Socket;
 import java.net.SocketOption;
@@ -121,24 +123,46 @@ public class Node extends Thread {
 		 * for this node arrives. 
 		 */
 		
-		// The port in which the connection is set up
-		int port;
+		// The port in which the connection is set up. 
+		// A valid port value is between 0 and 65535
+		int port = 64000;
 		// The name of this node
 		String hostname = myname ;
 		try{
-			/* Creates a Socket object with the computer name (hostname) 
-			 * and port number (port)
+			/* Creates a Server Socket with the computer name (hostname) 
+			 * and port number (port). 
+			 * Each node has a server socket in order to send and receive 
+			 * queries.
 			 */
-		    Socket socket_setup = new Socket(hostname, port); 
+			
+			ServerSocket serverSocket = new ServerSocket(port);
+			
+			//Creates a socket address from a hostname and a port number.
+
+			InetSocketAddress myAddress = new InetSocketAddress(hostname , port);
+			
 		  } catch (IOException e) {
 		    System.out.println("Could not listen on port " + port);
 		    System.exit(-1);
 		  }
 		
-		//seting up socket options (similar to setsockopt system call)
-		//public static final SocketOption<Boolean> SO_REUSEADDR ;
-
+			/* Reading the message from the client
+			 * Method accept() returns when a client has 
+			 * connected to server.
+			 */
+			Socket channel = serverSocket.accept();
+        	InputStream is = socket.getInputStream();
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+     
+            //If you read from the input stream, you'll hear what the client has to say.
+            String number = br.readLine();
+            System.out.println("Message received from client is "+number);
+		
+            
 	}
+
+	
 
 	
 }
