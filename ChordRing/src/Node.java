@@ -63,6 +63,14 @@ public class Node extends Thread {
 		this.ring_size = ring_size;
 	}
 	
+	public String getMyname() {
+		return myname;
+	}
+
+	public void setMyname(String myname) {
+		this.myname = myname;
+	}
+	
 	int query(Command c) throws NoSuchAlgorithmException{
 		int song_id = ChordRing.calculate_sha1(c.key, ring_size);
 		int value = -1; // i am not responsible for song
@@ -115,7 +123,7 @@ public class Node extends Thread {
 		// The port in which the connection is set up
 		int port;
 		// The name of the node
-		String hostname = getMyname() ;
+		String hostname = myname ;
 		try{
 			/* Creates a Socket object with the computer name (hostname) 
 			 * and port number (port)
@@ -127,11 +135,5 @@ public class Node extends Thread {
 		  }
 	}
 
-	public String getMyname() {
-		return myname;
-	}
-
-	public void setMyname(String myname) {
-		this.myname = myname;
-	}
+	
 }
