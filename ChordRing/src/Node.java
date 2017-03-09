@@ -8,9 +8,8 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 //needed for socket setup
 import java.net.Socket;
-import java.net.SocketOption;
 
-public class Node extends Thread {
+public class Node extends Thread implements Comparable<Node> {
 	private int myid = 0, successor, predecessor;
 	private String myname; // "1", "2", ...
 	int ring_size;
@@ -158,6 +157,15 @@ public class Node extends Thread {
         System.out.println("Message received from client is "+answer);
 		
             
+	}
+
+	// used to sort nodes after every join or depart in main 
+	@Override
+	public int compareTo(Node nd) {
+		int compareId = (int) nd.getId();
+		//ascending order
+		return (int) (this.getId() - compareId);
+		
 	}
 
 	
