@@ -116,10 +116,10 @@ public class Node extends Thread {
 		return answer;
 	}
 	
-	int set_the_socket_and_listen_it () {
+	void set_the_socket_and_listen_it () throws IOException {
 		/* This function is executed by each thread in Chord Ring. 
 		 * It setups a socket for each thread (node) and then wait (remains open
-		 * and listens for incomming connections) until a depart query 
+		 * and listens for incoming connections) until a depart query 
 		 * for this node arrives. 
 		 */
 		
@@ -128,59 +128,36 @@ public class Node extends Thread {
 		int port = 64000;
 		// The name of this node
 		String hostname = myname ;
-		try{
-			/* Creates a Server Socket with the computer name (hostname) 
-			 * and port number (port). 
-			 * Each node has a server socket in order to send and receive 
-			 * queries.
-			 */
-			
-			ServerSocket serverSocket = new ServerSocket(port);
-			
-			//Creates a socket address from a hostname and a port number.
+		ServerSocket serverSocket = null;
+		InetSocketAddress myAddress;
+		/* Creates a Server Socket with the computer name (hostname) 
+		 * and port number (port). 
+		 * Each node has a server socket in order to send and receive 
+		 * queries.
+		 */
+		
+		serverSocket = new ServerSocket(port);
+		Socket channel = serverSocket.accept();
+    	InputStream is = channel.getInputStream();
+    	InputStreamReader isr = new InputStreamReader(is);
+        BufferedReader br = new BufferedReader(isr);
+		
+		//Creates a socket address from a hostname and a port number.
 
-			InetSocketAddress myAddress = new InetSocketAddress(hostname , port);
-			
-		  } catch (IOException e) {
-		    System.out.println("Could not listen on port " + port);
-		    System.exit(-1);
-		  }
+		myAddress = new InetSocketAddress(hostname , port);
 		
-			/* Reading the message from the client
-			 * Method accept() returns when a client has 
-			 * connected to server.
-			 */
-			Socket channel = serverSocket.accept();
-        	InputStream is = channel.getInputStream();
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-     
-            // If you read from the input stream, you'll hear what the client has to say.
-            String answer = br.readLine();
-            System.out.println("Message received from client is "+answer);
+	
+		/* Reading the message from the client
+		 * Method accept() returns when a client has 
+		 * connected to server.
+		 */
+        
+
+        // If you read from the input stream, you'll hear what the client has to say.
+        String answer = br.readLine();
+        System.out.println("Message received from client is "+answer);
 		
-            /* Checking Answer
-             * if insert ..
-             * if delete ..
-             * if query ..
-             * forward_message(buffer,successor_hostname,PORT_BASE+successor);
-             * Στην forward_message γνωρίζουμε το μήνυμα (buffer), το name του 
-             * διαδόχου (successor_hostname) και το port του διαδόχου (PORT_BASE+successor)
-             * επομένως πρέπει να κάνουμε το connect.
-             */
-	
-            /* Η συνάρτηση connect θα έχει κάτι τέτοιο λογικά (παράδειγμα από 
-             * StackOverflow). Επισυνάπτω και το link!!
-             * Client Just needs the IP of the Server. You have to find out 
-             * the IP of the server and tell the client about it, like: 
-             * String serverName = "IP of server comes here";  
-             * // Indicating the place to put Server's IP
-             * s = new Socket(serverName, 10);
-             * http://stackoverflow.com/questions/28308584/connecting-two-computers-for-client-server-communication-in-java
-             */
-	
-            /* ΣΟΣ!! Υλοποιεί την connect!! θα την χρησιμοποιήσουμε :) Ξέρουμε το address του Socket */
-            //https://docs.oracle.com/javase/7/docs/api/java/net/Socket.html#connect(java.net.SocketAddress)
+            
 	}
 
 	
