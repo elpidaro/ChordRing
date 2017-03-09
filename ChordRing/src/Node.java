@@ -10,6 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 
 public class Node extends Thread implements Comparable<Node> {
+	public static final int PORT_BASE = 49152;
 	private int myid = 0, successor, predecessor;
 	private String myname; // "1", "2", ...
 	int ring_size;
@@ -19,6 +20,7 @@ public class Node extends Thread implements Comparable<Node> {
 	public Node(String name, int size) {
 		myname = name;
 		ring_size = size;
+		super.setName(name);
 	}
 
 	private boolean iAmResponsibleForId (int id){
@@ -117,21 +119,23 @@ public class Node extends Thread implements Comparable<Node> {
 	
 	public void run () {
 		/* This function is executed by each thread in Chord Ring. 
-		 * It setups a socket for each thread (node) and then wait (remains open
+		 * It setups a socket for each thread (node) and then waits (remains open
 		 * and listens for incoming connections) until a depart query 
 		 * for this node arrives. 
 		 */
 		
 		// The port in which the connection is set up. 
 		// A valid port value is between 0 and 65535
-		int port = 64000;
+		int port = PORT_BASE + myid;
 		// The name of this node
 		String hostname = myname ;
 		ServerSocket serverSocket = null;
 		InetSocketAddress myAddress;
-		InputStream is;
+		InputStream is = null;
 		InputStreamReader isr;
 		BufferedReader br = null;
+		String message_to_handle = null;
+		Socket channel = null;
 		/* Creates a Server Socket with the computer name (hostname) 
 		 * and port number (port). 
 		 * Each node has a server socket in order to send and receive 
@@ -139,39 +143,50 @@ public class Node extends Thread implements Comparable<Node> {
 		 */
 		
 		try {
-			serverSocket = new ServerSocket(port);
-			Socket channel = serverSocket.accept();
-	    	is = channel.getInputStream();
-	    	isr = new InputStreamReader(is);
-	        br = new BufferedReader(isr);
+			serverSocket = new ServerSocket(49157);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+            System.err.println("Could not listen on defined port");
+            System.exit(1);
+        }
+			
+		while (true){
+			// block until a request has arrived
+			/* Reading the message from the client
+			 * Method accept() returns when a client has 
+			 * connected to server.
+			 */
+			try {
+				channel = serverSocket.accept();
+			} catch (IOException e) {
+				System.err.println("Accept failed");
+	            System.exit(1);
+			}
+			System.out.println("Server:Connected");
+			try {
+				is = channel.getInputStream();
+			} catch (IOException e) {
+				System.err.println("Getting input stream failed");
+	            System.exit(1);
+			}
+			isr = new InputStreamReader(is);
+			br = new BufferedReader(isr);
+			
+			// If you read from the input stream, you'll hear what the client has to say.
+			try {
+				message_to_handle = br.readLine();
+			} catch (IOException e) {
+				System.err.println("ReadLine failed");
+	            System.exit(1);
+			}
+	        System.out.println("Message received from client is " + message_to_handle);
 		}
 		
     	
 		
 		//Creates a socket address from a hostname and a port number.
 
-		myAddress = new InetSocketAddress(hostname , port);
+		//myAddress = new InetSocketAddress(hostname , port);
 		
-	
-		/* Reading the message from the client
-		 * Method accept() returns when a client has 
-		 * connected to server.
-		 */
-        
-
-        // If you read from the input stream, you'll hear what the client has to say.
-        
-		String answer;
-		try {
-			answer = br.readLine();
-	        System.out.println("Message received from client is "+answer);
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}     
 	}
 
 	// used to sort nodes after every join or depart in main 
