@@ -115,7 +115,7 @@ public class Node extends Thread implements Comparable<Node> {
 		return answer;
 	}
 	
-	void set_the_socket_and_listen_it () throws IOException {
+	public void run () {
 		/* This function is executed by each thread in Chord Ring. 
 		 * It setups a socket for each thread (node) and then wait (remains open
 		 * and listens for incoming connections) until a depart query 
@@ -129,17 +129,27 @@ public class Node extends Thread implements Comparable<Node> {
 		String hostname = myname ;
 		ServerSocket serverSocket = null;
 		InetSocketAddress myAddress;
+		InputStream is;
+		InputStreamReader isr;
+		BufferedReader br = null;
 		/* Creates a Server Socket with the computer name (hostname) 
 		 * and port number (port). 
 		 * Each node has a server socket in order to send and receive 
 		 * queries.
 		 */
 		
-		serverSocket = new ServerSocket(port);
-		Socket channel = serverSocket.accept();
-    	InputStream is = channel.getInputStream();
-    	InputStreamReader isr = new InputStreamReader(is);
-        BufferedReader br = new BufferedReader(isr);
+		try {
+			serverSocket = new ServerSocket(port);
+			Socket channel = serverSocket.accept();
+	    	is = channel.getInputStream();
+	    	isr = new InputStreamReader(is);
+	        br = new BufferedReader(isr);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+    	
 		
 		//Creates a socket address from a hostname and a port number.
 
@@ -153,10 +163,15 @@ public class Node extends Thread implements Comparable<Node> {
         
 
         // If you read from the input stream, you'll hear what the client has to say.
-        String answer = br.readLine();
-        System.out.println("Message received from client is "+answer);
-		
-            
+        
+		String answer;
+		try {
+			answer = br.readLine();
+	        System.out.println("Message received from client is "+answer);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}     
 	}
 
 	// used to sort nodes after every join or depart in main 
