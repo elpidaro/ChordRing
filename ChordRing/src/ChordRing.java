@@ -1,5 +1,7 @@
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
@@ -25,15 +27,22 @@ public class ChordRing {
 
 	}
 	
-	public static void main(String[] args) {
-		Node n = new Node("1", 1000);
+	public static void main(String[] args) throws IOException {
+		while(true){
+			BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
+			System.out.println("Type your command: ");
+			String command = input.readLine();
+			System.out.println("Command read: " + command);
+
+		}
+		/*Node n = new Node("1", 1000);
 		Socket socket = null;
 		String message_to_send = null;
 		System.out.println(n.getId());
 		System.out.println("Starting thread..." + n.getName());
 		n.start();
 		try {
-			socket = new Socket("localhost", 49164);
+			socket = new Socket("localhost", 49153);
 		} 
 		catch (UnknownHostException e) {
 		     System.out.println("Unknown host");
@@ -54,7 +63,7 @@ public class ChordRing {
         OutputStreamWriter osw = new OutputStreamWriter(os);
         BufferedWriter bw = new BufferedWriter(osw);
         try {
-        	message_to_send = "Hi server! Do you want a cup of coffe?\n";
+        	message_to_send = "Hi,server,Do you want a cup of coffe?\n";
 			bw.write(message_to_send);
             bw.flush();
 		} catch (IOException e) {
@@ -63,6 +72,8 @@ public class ChordRing {
 		}
         System.out.println("Client said:" + message_to_send); 
 
-
+	*/
+		
+		
 	}
 }

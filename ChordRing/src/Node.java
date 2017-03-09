@@ -4,7 +4,6 @@ import java.util.Map;
 
 //needed for catch(IOException e)
 import java.io.*;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 //needed for socket setup
 import java.net.Socket;
@@ -12,54 +11,41 @@ import java.net.UnknownHostException;
 
 public class Node extends Thread implements Comparable<Node> {
 	public static final int PORT_BASE = 49152;
-	private int myid = 0, successor, predecessor;
-	private String myname; // "1", "2", ...
+	private int myid = 0;
+	Node successor, predecessor;
+	private int myport = 0; // takes values PORT_BASE+1, PORT_BASE+2, ...
+	String successorName;
+	private String myname; // "localhost" here
 	int ring_size;
 	boolean IamInit = false;
 	Map<Integer, Integer> files = new HashMap<>();
 	
 
-	public Node(String name, int size) {
+	public Node(String name, int size, int port) {
 		myname = name;
 		ring_size = size;
-		super.setName(name);
+		myport = port;
 	}
 
-	private boolean iAmResponsibleForId (int id){
-		if ((id > predecessor && id <= myid) || (myid < predecessor && ((id < myid) || (id > predecessor)))){
+	private boolean iAmResponsibleForId (int song_id){
+		if ((song_id > predecessor.getId() && song_id <= myid) || (myid < predecessor.getId() && ((song_id < myid) || (song_id > predecessor.getId())))){
 			return true;
 		}
 		else return false;
 	}
 	
-	public long getId() {
+	public int getmyId() {
 		if (myid != 0) return myid;
 		else {
 			try {
 				myid = ChordRing.calculate_sha1(myname, ring_size);
 			} catch (NoSuchAlgorithmException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 			return myid;
 		}
 	}
 
-	public int getSuccessor() {
-		return successor;
-	}
-
-	public void setSuccessor(int successor) {
-		this.successor = successor;
-	}
-
-	public int getPredecessor() {
-		return predecessor;
-	}
-
-	public void setPredecessor(int predecessor) {
-		this.predecessor = predecessor;
-	}
 
 	public int getRing_size() {
 		return ring_size;
@@ -128,7 +114,6 @@ public class Node extends Thread implements Comparable<Node> {
 		
 		// The port in which the connection is set up. 
 		// A valid port value is between 0 and 65535
-		int port = PORT_BASE + Integer.parseInt(myname);
 		// The name of this node
 		ServerSocket serverSocket = null;
 		InputStream is = null;
@@ -143,7 +128,7 @@ public class Node extends Thread implements Comparable<Node> {
 		 */
 		
 		try {
-			serverSocket = new ServerSocket(port);
+			serverSocket = new ServerSocket(myport);
 		} catch (IOException e) {
             System.err.println("Could not listen on defined port");
             System.exit(1);
@@ -180,16 +165,20 @@ public class Node extends Thread implements Comparable<Node> {
 			}
 	        System.out.println("Message received from client is " + message_to_handle);
 	        
+	        
 	        // decide if I am the initial node who received the query
+	        
 	        String[] message = message_to_handle.split(" ");
-	        if (message.length > 1){
+	        if (Integer.parseInt(message[1]) == myid){ // message[1] is the initial host's ID
 	        	// I am the initial node
 	        	IamInit = true;
 	        }
-	        String wholeMessage = message[0]; // keeps what the user entered
-	        String []splittedMessage = wholeMessage.split(",");
+	        String theQuery = message[0]; // keeps what the user entered
+	        String []splittedMessage = theQuery.split(",");
+	        
 	        
 	        // decide what to do according to the type of query
+	        
 	        switch (splittedMessage[0]) {
 	        case "INSERT":
 	        	if (message.length != 3){
@@ -210,12 +199,12 @@ public class Node extends Thread implements Comparable<Node> {
 	        				System.out.println(myAnswer);
 	        			}
 	        			else {
-	        				forward_to(myAnswer, ring_size);
+	        				forward_to(myAnswer, message[2], PORT_BASE + ring_size); //message[2] is the initial host's name
 	        			}
 	        		}
 	        		else {
 	        			// I didn't do the insert
-	        			forward_to(wholeMessage, successor);
+	        			forward_to(message_to_handle, successorName, successor.getmyId());
 	        			if (IamInit){
 	        				 start_listening_for_answers();
 	        			}
@@ -258,11 +247,10 @@ public class Node extends Thread implements Comparable<Node> {
 		
 	}
 	
-	public void forward_to(String message, int addnum){
+	public void forward_to(String message, String hostname, int port){
 		Socket socket = null;
-		int port = PORT_BASE + addnum;
 		try {
-			socket = new Socket("localhost", port);
+			socket = new Socket(hostname, port);
 		} 
 		catch (UnknownHostException e) {
 		     System.out.println("Unknown host");
