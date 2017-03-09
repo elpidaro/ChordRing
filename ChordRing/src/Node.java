@@ -8,12 +8,14 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 //needed for socket setup
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 public class Node extends Thread implements Comparable<Node> {
 	public static final int PORT_BASE = 49152;
 	private int myid = 0, successor, predecessor;
 	private String myname; // "1", "2", ...
 	int ring_size;
+	boolean IamInit = false;
 	Map<Integer, Integer> files = new HashMap<>();
 	
 
@@ -75,8 +77,8 @@ public class Node extends Thread implements Comparable<Node> {
 		this.myname = myname;
 	}
 	
-	int query(Command c) throws NoSuchAlgorithmException{
-		int song_id = ChordRing.calculate_sha1(c.key, ring_size);
+	int query(String key) throws NoSuchAlgorithmException{
+		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int value = -1; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
 			value = -2; // i am responsible, song doesn't exist 
@@ -87,25 +89,25 @@ public class Node extends Thread implements Comparable<Node> {
 		return value;
 	}
 	
-	int insert(Command c) throws NoSuchAlgorithmException{
-		int song_id = ChordRing.calculate_sha1(c.key, ring_size);
+	int insert(String key, int value) throws NoSuchAlgorithmException{
+		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int answer = 0; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
 			if (files.containsKey(song_id)){
 				// update
-				files.replace(song_id, c.value);
+				files.replace(song_id, value);
 			}
 			else{
 				// insert
-				files.put(song_id, c.value);
+				files.put(song_id, value);
 			}
 			answer = 1; // I did the insert
 		}
 		return answer;
 	}
 	
-	int delete (Command c) throws NoSuchAlgorithmException{
-		int song_id = ChordRing.calculate_sha1(c.key, ring_size);
+	int delete (String key) throws NoSuchAlgorithmException{
+		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int answer = 0; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
 			if (files.containsKey(song_id)){
@@ -126,11 +128,9 @@ public class Node extends Thread implements Comparable<Node> {
 		
 		// The port in which the connection is set up. 
 		// A valid port value is between 0 and 65535
-		int port = PORT_BASE + myid;
+		int port = PORT_BASE + Integer.parseInt(myname);
 		// The name of this node
-		String hostname = myname ;
 		ServerSocket serverSocket = null;
-		InetSocketAddress myAddress;
 		InputStream is = null;
 		InputStreamReader isr;
 		BufferedReader br = null;
@@ -143,7 +143,7 @@ public class Node extends Thread implements Comparable<Node> {
 		 */
 		
 		try {
-			serverSocket = new ServerSocket(49165);
+			serverSocket = new ServerSocket(port);
 		} catch (IOException e) {
             System.err.println("Could not listen on defined port");
             System.exit(1);
@@ -179,6 +179,66 @@ public class Node extends Thread implements Comparable<Node> {
 	            System.exit(1);
 			}
 	        System.out.println("Message received from client is " + message_to_handle);
+	        
+	        // decide if I am the initial node who received the query
+	        String[] message = message_to_handle.split(" ");
+	        if (message.length > 1){
+	        	// I am the initial node
+	        	IamInit = true;
+	        }
+	        String wholeMessage = message[0]; // keeps what the user entered
+	        String []splittedMessage = wholeMessage.split(",");
+	        
+	        // decide what to do according to the type of query
+	        switch (splittedMessage[0]) {
+	        case "INSERT":
+	        	if (message.length != 3){
+	        		System.err.println("Wrong number of parameters");
+	        	}
+	        	else {
+	        		int insertresult = -1;
+					try {
+						insertresult = insert(splittedMessage[1], Integer.parseInt(splittedMessage[2]));
+					} catch (NoSuchAlgorithmException e) {
+						e.printStackTrace();
+						System.exit(1);
+					} 
+	        		if (insertresult == 1){
+	        			// if I did the insert
+	        			String myAnswer = "Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2] + ") at NodeID" + myid;
+	        			if (IamInit){
+	        				System.out.println(myAnswer);
+	        			}
+	        			else {
+	        				forward_to(myAnswer, ring_size);
+	        			}
+	        		}
+	        		else {
+	        			// I didn't do the insert
+	        			forward_to(wholeMessage, successor);
+	        			if (IamInit){
+	        				 start_listening_for_answers();
+	        			}
+	        		}
+	        	}
+	        case "QUERY":
+	        	if (message.length != 2){
+	        		System.err.println("Wrong number of parameters");
+	        	}
+	        	else {
+	        		//do staff
+	        	}
+	        case "DELETE":
+	        	if (message.length != 2){
+	        		System.err.println("Wrong number of parameters");
+	        	}
+	        	else {
+	        		//do staff
+	        	}
+	        }
+
+
+	        
 		}
 		
     	
@@ -197,7 +257,78 @@ public class Node extends Thread implements Comparable<Node> {
 		return (int) (this.getId() - compareId);
 		
 	}
+	
+	public void forward_to(String message, int addnum){
+		Socket socket = null;
+		int port = PORT_BASE + addnum;
+		try {
+			socket = new Socket("localhost", port);
+		} 
+		catch (UnknownHostException e) {
+		     System.out.println("Unknown host");
+		     System.exit(1);
+		}
+		catch (IOException e) {
+			System.out.println("Cannot use this port");
+		    System.exit(1);
+		}
+		OutputStream os = null;
+		try {
+			os = socket.getOutputStream();
+		} catch (IOException e) {
+			System.out.println("Couldn't get output stream");
+			System.exit(1);
+		}
+        OutputStreamWriter osw = new OutputStreamWriter(os);
+        BufferedWriter bw = new BufferedWriter(osw);
+        try {
+			bw.write(message);
+            bw.flush();
+		} catch (IOException e) {
+			System.out.println("Couldn't write to BufferWriter");
+			System.exit(1);
+		}		
+	}
 
+	public void start_listening_for_answers(){
+		ServerSocket serverSocket = null;
+		InputStream is = null;
+		InputStreamReader isr;
+		BufferedReader br = null;
+		String answer = null;
+		Socket channel = null;
+		try {
+			serverSocket = new ServerSocket(PORT_BASE + ring_size);
+		} catch (IOException e) {
+            System.err.println("Could not listen on defined port");
+            System.exit(1);
+        }
+		
+		try {
+			channel = serverSocket.accept();
+		} catch (IOException e) {
+			System.err.println("Accept failed");
+            System.exit(1);
+		}
+		System.out.println("Server:Connected");
+		try {
+			is = channel.getInputStream();
+		} catch (IOException e) {
+			System.err.println("Getting input stream failed");
+            System.exit(1);
+		}
+		isr = new InputStreamReader(is);
+		br = new BufferedReader(isr);
+		
+		// If you read from the input stream, you'll hear what the client has to say.
+		try {
+			answer = br.readLine();
+		} catch (IOException e) {
+			System.err.println("ReadLine failed");
+            System.exit(1);
+		}
+		System.out.println(answer);
+	}
 	
 
 	
