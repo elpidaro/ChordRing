@@ -33,14 +33,15 @@ public class ChordRing {
 		System.out.println("Starting thread..." + n.getName());
 		n.start();
 		try {
-			socket = new Socket("localhost", 49157);
+			socket = new Socket("localhost", 49164);
 		} 
 		catch (UnknownHostException e) {
 		     System.out.println("Unknown host");
 		     System.exit(1);
 		}
 		catch (IOException e) {
-			e.printStackTrace();
+			System.out.println("Cannot use this port");
+		    System.exit(1);
 		}
 		System.out.println("Client: Connected");
 		OutputStream os = null;

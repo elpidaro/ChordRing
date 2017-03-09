@@ -143,7 +143,7 @@ public class Node extends Thread implements Comparable<Node> {
 		 */
 		
 		try {
-			serverSocket = new ServerSocket(49157);
+			serverSocket = new ServerSocket(49165);
 		} catch (IOException e) {
             System.err.println("Could not listen on defined port");
             System.exit(1);
