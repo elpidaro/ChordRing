@@ -216,6 +216,38 @@ public class Node extends Thread implements Comparable<Node> {
 	        	}
 	        	else {
 	        		//do staff
+	        		//new!!!
+	        		
+	        		try{
+	        			int queryresult;  
+	        			if (splittedMessage[1] != "*"){
+	        				queryresult = query(splittedMessage[1]);
+	        				if (queryresult == -2){
+	        					// I don't have this but i am rensponsible for this song
+	        					System.out.println(splittedMessage[1]+": Not found");
+	        				}
+	        				if (queryresult == -1){
+	        					//I am not the responsible node to talk about it :/
+	        					//ask the next one :(
+	        					forward_to(message_to_handle, successorName, successor.getmyId());
+	        				}
+	        				if (queryresult > 0){
+	        					//file exists in my list
+	        					System.out.println("Greetings from Node :" + myname + "I've got this song with value"+queryresult);
+	        				}
+	        				
+	        			}
+	        			else{
+	        				//I am asking for all songs in all nodes
+	        				//print my list first print<java>.files
+	        				
+	        				//forward the message to the next node
+	        				forward_to(message_to_handle, successorName, successor.getmyId());
+	        			}
+	        		} catch (NoSuchAlgorithmException e) {
+						e.printStackTrace();
+						System.exit(1);
+	        		}
 	        	}
 	        case "DELETE":
 	        	if (message.length != 2){
@@ -223,6 +255,23 @@ public class Node extends Thread implements Comparable<Node> {
 	        	}
 	        	else {
 	        		//do staff
+	        		//new!!!
+	        		try{
+	        			int deleteresult;
+	        			System.out.println("Try to delete song"+ splittedMessage[1]);
+	        			deleteresult = delete(splittedMessage[1]);
+	        			if (deleteresult == 0){
+	        				forward_to(message_to_handle, successorName, successor.getmyId());
+	        			}
+	        			else{
+	        				System.out.println("Deleted song"+ splittedMessage[1]);
+	        			} 
+	        		} catch (NoSuchAlgorithmException e) {
+							e.printStackTrace();
+							System.exit(1);
+	        			}
+	        		
+	        		
 	        	}
 	        }
 
@@ -317,6 +366,7 @@ public class Node extends Thread implements Comparable<Node> {
 		}
 		System.out.println(answer);
 	}
+
 	
 
 	

@@ -34,8 +34,8 @@ public class ChordRing {
 			String command = input.readLine();
 			System.out.println("Command read: " + command);
 
-		}
-		/*Node n = new Node("1", 1000);
+		}/*
+		Node n = new Node("1", 1000);
 		Socket socket = null;
 		String message_to_send = null;
 		System.out.println(n.getId());
@@ -72,7 +72,7 @@ public class ChordRing {
 		}
         System.out.println("Client said:" + message_to_send); 
 
-	*/
+		*/
 		
 		
 	}
