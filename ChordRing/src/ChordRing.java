@@ -35,7 +35,7 @@ public class ChordRing {
 			System.out.println("Command read: " + command);
 			
 		
-			int count = args.length; //args[1]=plithos arxikwn komvwn args[2]=log(ring size)
+			int count = args.length; //args[1]=plithos  arxikwn komvwn args[2]=log(ring size)
 			if (count != 2){
 				System.out.println("Please enter the <number of desired nodes> and the <log of ring size>");
 				return ;
@@ -50,6 +50,7 @@ public class ChordRing {
 		
 		
 		}/*
+		*Doka <3
 		Node n = new Node("1", 1000);
 		Socket socket = null;
 		String message_to_send = null;

@@ -340,7 +340,7 @@ public class Node extends Thread implements Comparable<Node> {
 		}
 		
     	
-		
+		// DOka <3
 		//Creates a socket address from a hostname and a port number.
 
 		//myAddress = new InetSocketAddress(hostname , port);
