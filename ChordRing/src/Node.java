@@ -16,15 +16,23 @@ public class Node extends Thread implements Comparable<Node> {
 	private int myport = 0; // takes values PORT_BASE+1, PORT_BASE+2, ...
 	String successorName;
 	private String myname; // "localhost" here
+	private String seira;
 	int ring_size;
-	boolean IamInit = false;
-	Map<Integer, Integer> files = new HashMap<>();
+	private int arrived = 0;
+	private boolean IamInit = false;
+	Map<String, Integer> files = new HashMap<>();
 	
 
-	public Node(String name, int size, int port) {
+	public Node(String name, String seiratou, int size) {
 		myname = name;
 		ring_size = size;
-		myport = port;
+		seira = seiratou;
+		myport = PORT_BASE + Integer.parseInt(seiratou);
+		try {
+			myid = ChordRing.calculate_sha1(seira, ring_size);
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private boolean iAmResponsibleForId (int song_id){
@@ -35,18 +43,13 @@ public class Node extends Thread implements Comparable<Node> {
 	}
 	
 	public int getmyId() {
-		if (myid != 0) return myid;
-		else {
-			try {
-				myid = ChordRing.calculate_sha1(myname, ring_size);
-			} catch (NoSuchAlgorithmException e) {
-				e.printStackTrace();
-			}
 			return myid;
-		}
 	}
+	
 
-
+	public int getmyPort(){
+		return myport;
+	}
 	public int getRing_size() {
 		return ring_size;
 	}
@@ -79,13 +82,13 @@ public class Node extends Thread implements Comparable<Node> {
 		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int answer = 0; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
-			if (files.containsKey(song_id)){
+			if (files.containsKey(key)){
 				// update
-				files.replace(song_id, value);
+				files.replace(key, value);
 			}
 			else{
 				// insert
-				files.put(song_id, value);
+				files.put(key, value);
 			}
 			answer = 1; // I did the insert
 		}
@@ -99,8 +102,12 @@ public class Node extends Thread implements Comparable<Node> {
 			if (files.containsKey(song_id)){
 				// delete
 				files.remove(song_id);
+				answer = 2; //I had the song and i deleted
 			}
-			answer = 1; // I did the deletion
+			else{
+				answer = 1; // The song does not exist
+		
+			}
 		}
 		return answer;
 	}
@@ -169,6 +176,7 @@ public class Node extends Thread implements Comparable<Node> {
 	        // decide if I am the initial node who received the query
 	        
 	        String[] message = message_to_handle.split(" ");
+	        // to song mporei na exei kena! Na to doume kai stin praksi
 	        if (Integer.parseInt(message[1]) == myid){ // message[1] is the initial host's ID
 	        	// I am the initial node
 	        	IamInit = true;
@@ -199,12 +207,12 @@ public class Node extends Thread implements Comparable<Node> {
 	        				System.out.println(myAnswer);
 	        			}
 	        			else {
-	        				forward_to(myAnswer, message[2], PORT_BASE + ring_size); //message[2] is the initial host's name
+	        				forward_to(myAnswer, message[1], PORT_BASE + ring_size); //message[2] is the initial host's name
 	        			}
 	        		}
 	        		else {
 	        			// I didn't do the insert
-	        			forward_to(message_to_handle, successorName, successor.getmyId());
+	        			forward_to(message_to_handle, successorName, successor.getmyPort());
 	        			if (IamInit){
 	        				 start_listening_for_answers();
 	        			}
@@ -224,25 +232,52 @@ public class Node extends Thread implements Comparable<Node> {
 	        				queryresult = query(splittedMessage[1]);
 	        				if (queryresult == -2){
 	        					// I don't have this but i am rensponsible for this song
-	        					System.out.println(splittedMessage[1]+": Not found");
+	        					String answer = splittedMessage[1]+": Not found";
+	        					forward_to(answer, message[1], PORT_BASE + ring_size);
+	        					//System.out.println(splittedMessage[1]+": Not found");
 	        				}
 	        				if (queryresult == -1){
 	        					//I am not the responsible node to talk about it :/
 	        					//ask the next one :(
-	        					forward_to(message_to_handle, successorName, successor.getmyId());
+	        					forward_to(message_to_handle, successorName, successor.getmyPort());
 	        				}
 	        				if (queryresult > 0){
 	        					//file exists in my list
-	        					System.out.println("Greetings from Node :" + myname + "I've got this song with value"+queryresult);
+	        					String answer = "Greetings from Node :" + myid + "I've got this song with value"+queryresult;
+	    	        			forward_to(answer, message[1], PORT_BASE + ring_size);
+	        					//System.out.println("Greetings from Node :" + myname + "I've got this song with value"+queryresult);
 	        				}
+	        				if (IamInit){
+		        				 start_listening_for_answers();
+		        			}
 	        				
 	        			}
 	        			else{
-	        				//I am asking for all songs in all nodes
-	        				//print my list first print<java>.files
 	        				
-	        				//forward the message to the next node
-	        				forward_to(message_to_handle, successorName, successor.getmyId());
+	        				if (IamInit){
+	        					arrived ++;
+	        					if (arrived == 2){
+		        					//stop
+		        					// 
+		        					arrived=0;
+		        					System.out.println("I am initial node.. finished");
+		        				}
+	        				}
+	        				else{
+	        					//I am asking for all songs in all nodes
+		        				//print my list first print<java>.files
+	        				
+	        					for (String key : files.keySet()) {
+	        					    System.out.println(key + " " + files.get(key));
+	        					}
+	        					
+	        					//forward the message to the next node
+	        					forward_to(message_to_handle, successorName, successor.getmyPort());
+	        				}
+	        				
+	        				
+	        				
+	        				
 	        			}
 	        		} catch (NoSuchAlgorithmException e) {
 						e.printStackTrace();
@@ -261,11 +296,23 @@ public class Node extends Thread implements Comparable<Node> {
 	        			System.out.println("Try to delete song"+ splittedMessage[1]);
 	        			deleteresult = delete(splittedMessage[1]);
 	        			if (deleteresult == 0){
-	        				forward_to(message_to_handle, successorName, successor.getmyId());
+	        				forward_to(message_to_handle, successorName, successor.getmyPort());
 	        			}
 	        			else{
-	        				System.out.println("Deleted song"+ splittedMessage[1]);
+	        				if (deleteresult ==2){
+	        					String answer = "Deleted song"+ splittedMessage[1];
+	        					forward_to(answer, message[1], PORT_BASE + ring_size);
+	        				}
+	        				else{
+	        					String answer = "Song Doesn't exist :"+ splittedMessage[1];
+	        					forward_to(answer, message[1], PORT_BASE + ring_size);
+	        				}
+	        				
+	        				//System.out.println("Deleted song"+ splittedMessage[1]);
 	        			} 
+	        			if (IamInit){
+	        				 start_listening_for_answers();
+	        			}
 	        		} catch (NoSuchAlgorithmException e) {
 							e.printStackTrace();
 							System.exit(1);
@@ -273,10 +320,23 @@ public class Node extends Thread implements Comparable<Node> {
 	        		
 	        		
 	        	}
-	        }
+	        	
+	        case "JOIN":
+	        	if (message.length != 2){
+	        		System.err.println("Wrong number of parameters");
+	        	}
+	        	else {
+	        		//do staff
+	        		Node node = new Node("localhost", message[1] ,ring_size);
+	        		
+	        		
+	        	
+	        	
+	        	}
 
 
 	        
+	        }
 		}
 		
     	

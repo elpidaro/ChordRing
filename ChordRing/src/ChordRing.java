@@ -33,7 +33,22 @@ public class ChordRing {
 			System.out.println("Type your command: ");
 			String command = input.readLine();
 			System.out.println("Command read: " + command);
-
+			
+		
+			int count = args.length; //args[1]=plithos arxikwn komvwn args[2]=log(ring size)
+			if (count != 2){
+				System.out.println("Please enter the <number of desired nodes> and the <log of ring size>");
+				return ;
+			}
+			int number_of_nodes = Integer.parseInt(args[0]);
+			int M = Integer.parseInt(args[1]);
+			double ring = Math.pow(2,M);
+			long ring_size = Math.round(ring);
+			
+			System.out.printf("initial number of nodes: %d and ring size: %d",number_of_nodes,ring_size);
+			
+		
+		
 		}/*
 		Node n = new Node("1", 1000);
 		Socket socket = null;
