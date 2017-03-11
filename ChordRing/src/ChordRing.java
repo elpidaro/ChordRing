@@ -92,7 +92,6 @@ public class ChordRing {
 			Node n = new Node("localhost", Integer.toString(globalc), ring_size);
 			nodelist.add(n);
 		}
-		
 		fix_nodes(nodelist);
 		for (Node n: nodelist){
 			System.out.println(n.getmyId());
@@ -148,8 +147,19 @@ public class ChordRing {
 					fix_nodes(nodelist);
 				}
 			}
-			else if (option == "JOIN"){
-				// do stuff
+			else if (option.equals("JOIN")){
+				Node n = new Node("localhost",Integer.toString(globalc), ring_size);
+				nodelist.add(n);
+				fix_nodes(nodelist);
+				n.start();
+				// sends JOIN-successorID
+				main_forward_to("JOIN-"+n.successor.getmyId() +"\n", nodelist.get(0).getMyname(), nodelist.get(0).getmyPort());
+				try {
+					Thread.sleep(8000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
 			}
 			
 		}

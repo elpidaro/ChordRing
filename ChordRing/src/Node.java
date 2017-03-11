@@ -1,5 +1,7 @@
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 //needed for catch(IOException e)
@@ -54,10 +56,10 @@ public class Node extends Thread implements Comparable<Node> {
 			return myid;
 	}
 	
-
 	public int getmyPort(){
 		return myport;
 	}
+	
 	public int getRing_size() {
 		return ring_size;
 	}
@@ -385,6 +387,36 @@ public class Node extends Thread implements Comparable<Node> {
 	        	int value = Integer.parseInt(message[1].split(",")[1]);
 	        	files.put(key, value);
 	        }
+	        else if (message[0].equals("JOIN")) {
+	        	int hisSuccessorID = Integer.parseInt(message[1]);
+	        	List<String> to_remove = new ArrayList<String>();
+	        	if (myid == hisSuccessorID ){
+	        		for (String key : files.keySet()) {
+	        			System.out.println(key);
+	        			try {
+							if (ChordRing.calculate_sha1(key, ring_size) <= predecessor.getmyId()){
+								forward_to("GET_MY_STUFF-"+key + "," + files.get(key)+"\n", predecessor.getMyname(), predecessor.getmyPort());
+								to_remove.add(key);
+							}
+						} catch (NoSuchAlgorithmException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
+						try {
+							sleep(1000);
+						} catch (InterruptedException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+	        		for (String s : to_remove){
+	        			files.remove(s);
+	        		}
+	        	}
+	        	else {
+    				forward_to(message_to_handle+"\n", successor.getMyname(), successor.getmyPort());
+				}
+	        }
 		
 	        try {
 	        	serverSocket.close();
@@ -435,48 +467,4 @@ public class Node extends Thread implements Comparable<Node> {
 			System.exit(1);
 		}
 	}
-
-	/*public void start_listening_for_answers(){
-		ServerSocket serverSocket = null;
-		InputStream is = null;
-		InputStreamReader isr;
-		BufferedReader br = null;
-		String answer = null;
-		Socket channel = null;
-		try {
-			serverSocket = new ServerSocket(PORT_BASE + ring_size);
-		} catch (IOException e) {
-            System.err.println("Could not listen on defined port");
-            System.exit(1);
-        }
-		
-		try {
-			channel = serverSocket.accept();
-		} catch (IOException e) {
-			System.err.println("Accept failed");
-            System.exit(1);
-		}
-		System.out.println("Server:Connected");
-		try {
-			is = channel.getInputStream();
-		} catch (IOException e) {
-			System.err.println("Getting input stream failed");
-            System.exit(1);
-		}
-		isr = new InputStreamReader(is);
-		br = new BufferedReader(isr);
-		
-		// If you read from the input stream, you'll hear what the client has to say.
-		try {
-			answer = br.readLine();
-		} catch (IOException e) {
-			System.err.println("ReadLine failed");
-            System.exit(1);
-		}
-		System.out.println("Initial node: "+myid+","+ answer);
-	}*/
-
-	
-
-	
 }
