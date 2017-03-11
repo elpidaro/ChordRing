@@ -14,7 +14,6 @@ public class Node extends Thread implements Comparable<Node> {
 	private int myid = 0;
 	Node successor, predecessor;
 	private int myport = 0; // takes values PORT_BASE+1, PORT_BASE+2, ...
-	String successorName;
 	private String myname; // "localhost" here
 	private String seira;
 	int ring_size;
@@ -34,12 +33,21 @@ public class Node extends Thread implements Comparable<Node> {
 			e.printStackTrace();
 		}
 	}
+	
+	public String getSeira(){
+		return seira;
+	}
 
 	private boolean iAmResponsibleForId (int song_id){
-		if ((song_id > predecessor.getId() && song_id <= myid) || (myid < predecessor.getId() && ((song_id < myid) || (song_id > predecessor.getId())))){
+		if (song_id > predecessor.getmyId() && song_id <= myid) {
 			return true;
 		}
-		else return false;
+		else if (myid < predecessor.getmyId() && (song_id <= myid || song_id > predecessor.getmyId())){
+			return true;
+		}
+		else {
+			return false;
+		}
 	}
 	
 	public int getmyId() {
@@ -70,9 +78,10 @@ public class Node extends Thread implements Comparable<Node> {
 		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int value = -1; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
+			System.out.println("Node "+ myid + ": I am responsible for :" + key);
 			value = -2; // i am responsible, song doesn't exist 
-			if (files.containsKey(song_id)){
-				value = files.get(song_id); // song exists in my list --> value >= 0 returned
+			if (files.containsKey(key)){
+				value = files.get(key); // song exists in my list --> value >= 0 returned
 			}
 		}
 		return value;
@@ -82,6 +91,7 @@ public class Node extends Thread implements Comparable<Node> {
 		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int answer = 0; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
+			System.out.println("Node "+ myid + ": I am responsible for :" + key);
 			if (files.containsKey(key)){
 				// update
 				files.replace(key, value);
@@ -99,10 +109,11 @@ public class Node extends Thread implements Comparable<Node> {
 		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int answer = 0; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
-			if (files.containsKey(song_id)){
+			System.out.println("Node "+ myid + ": I am responsible for :" + key);
+			if (files.containsKey(key)){
 				// delete
-				files.remove(song_id);
-				answer = 2; //I had the song and i deleted
+				files.remove(key);
+				answer = 2; //I had the song and i deleted it
 			}
 			else{
 				answer = 1; // The song does not exist
@@ -113,6 +124,7 @@ public class Node extends Thread implements Comparable<Node> {
 	}
 	
 	public void run () {
+		System.out.println("Node-Thread with id " + myid + " started!\n");
 		/* This function is executed by each thread in Chord Ring. 
 		 * It setups a socket for each thread (node) and then waits (remains open
 		 * and listens for incoming connections) until a depart query 
@@ -121,7 +133,6 @@ public class Node extends Thread implements Comparable<Node> {
 		
 		// The port in which the connection is set up. 
 		// A valid port value is between 0 and 65535
-		// The name of this node
 		ServerSocket serverSocket = null;
 		InputStream is = null;
 		InputStreamReader isr;
@@ -134,26 +145,21 @@ public class Node extends Thread implements Comparable<Node> {
 		 * queries.
 		 */
 		
-		try {
-			serverSocket = new ServerSocket(myport);
-		} catch (IOException e) {
-            System.err.println("Could not listen on defined port");
-            System.exit(1);
-        }
 			
 		while (true){
-			// block until a request has arrived
-			/* Reading the message from the client
-			 * Method accept() returns when a client has 
-			 * connected to server.
-			 */
+			try {
+				serverSocket = new ServerSocket(myport);
+			} catch (IOException e) {
+	            System.err.println("Could not listen on defined port");
+	            System.exit(1);
+	        }
 			try {
 				channel = serverSocket.accept();
 			} catch (IOException e) {
 				System.err.println("Accept failed");
 	            System.exit(1);
 			}
-			System.out.println("Server:Connected");
+			// System.out.println("Node "+myid+":Connected");
 			try {
 				is = channel.getInputStream();
 			} catch (IOException e) {
@@ -163,33 +169,51 @@ public class Node extends Thread implements Comparable<Node> {
 			isr = new InputStreamReader(is);
 			br = new BufferedReader(isr);
 			
+			
+			/* Reading the message from the client
+			 * Method accept() returns when a client has 
+			 * connected to server.
+			 */
+			
+
 			// If you read from the input stream, you'll hear what the client has to say.
 			try {
+				// block until a request has arrived
 				message_to_handle = br.readLine();
 			} catch (IOException e) {
 				System.err.println("ReadLine failed");
 	            System.exit(1);
-			}
-	        System.out.println("Message received from client is " + message_to_handle);
-	        
-	        
+			}	        
+			System.out.println("Node "+ myid +": Got message: "+ message_to_handle);
+
 	        // decide if I am the initial node who received the query
 	        
-	        String[] message = message_to_handle.split(" ");
-	        // to song mporei na exei kena! Na to doume kai stin praksi
-	        if (Integer.parseInt(message[1]) == myid){ // message[1] is the initial host's ID
-	        	// I am the initial node
-	        	IamInit = true;
-	        }
+	        String[] message = message_to_handle.split("-");
 	        String theQuery = message[0]; // keeps what the user entered
+
+	     // Check if it is an answer
+	        if (theQuery.equals("ANSWER")){
+	        	System.out.println("Node "+myid+": "+message[1]);
+	        	try {
+	    			serverSocket.close();
+	    		} catch (IOException e) {
+	    			e.printStackTrace();
+	    		}
+	        	continue;
+	        }
+	        
+	        if (message.length == 3){
+	        	if (Integer.parseInt(message[2]) == myport){ // message[2] is the initial host's port
+	        		// I am the initial node
+	        		IamInit = true;
+	        	}
+	        }
+	        
 	        String []splittedMessage = theQuery.split(",");
-	        
-	        
 	        // decide what to do according to the type of query
 	        
-	        switch (splittedMessage[0]) {
-	        case "INSERT":
-	        	if (message.length != 3){
+	        if (splittedMessage[0].equals("INSERT")) {
+	        	if (splittedMessage.length != 3){
 	        		System.err.println("Wrong number of parameters");
 	        	}
 	        	else {
@@ -202,157 +226,181 @@ public class Node extends Thread implements Comparable<Node> {
 					} 
 	        		if (insertresult == 1){
 	        			// if I did the insert
-	        			String myAnswer = "Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2] + ") at NodeID" + myid;
+	        			String myAnswer = "node "+ myid +" Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2]+")";
 	        			if (IamInit){
-	        				System.out.println(myAnswer);
+	        				System.out.println("Node "+ myid + ": " + myAnswer);
 	        			}
 	        			else {
-	        				forward_to(myAnswer, message[1], PORT_BASE + ring_size); //message[2] is the initial host's name
+	        				forward_to("ANSWER-"+myAnswer+"\n", message[1], Integer.parseInt(message[2])); //message[2] is the initial host's name
 	        			}
 	        		}
 	        		else {
 	        			// I didn't do the insert
-	        			forward_to(message_to_handle, successorName, successor.getmyPort());
-	        			if (IamInit){
-	        				 start_listening_for_answers();
-	        			}
+	        			forward_to(message_to_handle+"\n", successor.getMyname(), successor.getmyPort());
+        				System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());	        			
 	        		}
 	        	}
-	        case "QUERY":
-	        	if (message.length != 2){
+	        }
+	        else if (splittedMessage[0].equals("QUERY")) {
+
+	        	if (splittedMessage.length != 2){
 	        		System.err.println("Wrong number of parameters");
 	        	}
 	        	else {
-	        		//do staff
-	        		//new!!!
 	        		
-	        		try{
-	        			int queryresult;  
-	        			if (splittedMessage[1] != "*"){
-	        				queryresult = query(splittedMessage[1]);
-	        				if (queryresult == -2){
-	        					// I don't have this but i am rensponsible for this song
-	        					String answer = splittedMessage[1]+": Not found";
-	        					forward_to(answer, message[1], PORT_BASE + ring_size);
-	        					//System.out.println(splittedMessage[1]+": Not found");
-	        				}
-	        				if (queryresult == -1){
-	        					//I am not the responsible node to talk about it :/
-	        					//ask the next one :(
-	        					forward_to(message_to_handle, successorName, successor.getmyPort());
-	        				}
-	        				if (queryresult > 0){
-	        					//file exists in my list
-	        					String answer = "Greetings from Node :" + myid + "I've got this song with value"+queryresult;
-	    	        			forward_to(answer, message[1], PORT_BASE + ring_size);
-	        					//System.out.println("Greetings from Node :" + myname + "I've got this song with value"+queryresult);
-	        				}
-	        				if (IamInit){
-		        				 start_listening_for_answers();
-		        			}
-	        				
-	        			}
-	        			else{
-	        				
-	        				if (IamInit){
-	        					arrived ++;
-	        					if (arrived == 2){
-		        					//stop
-		        					// 
-		        					arrived=0;
-		        					System.out.println("I am initial node.. finished");
-		        				}
-	        				}
-	        				else{
-	        					//I am asking for all songs in all nodes
-		        				//print my list first print<java>.files
-	        				
-	        					for (String key : files.keySet()) {
-	        					    System.out.println(key + " " + files.get(key));
-	        					}
-	        					
-	        					//forward the message to the next node
-	        					forward_to(message_to_handle, successorName, successor.getmyPort());
-	        				}
-	        				
-	        				
-	        				
-	        				
-	        			}
-	        		} catch (NoSuchAlgorithmException e) {
-						e.printStackTrace();
-						System.exit(1);
-	        		}
-	        	}
-	        case "DELETE":
-	        	if (message.length != 2){
-	        		System.err.println("Wrong number of parameters");
-	        	}
-	        	else {
-	        		//do staff
-	        		//new!!!
-	        		try{
-	        			int deleteresult;
-	        			System.out.println("Try to delete song"+ splittedMessage[1]);
-	        			deleteresult = delete(splittedMessage[1]);
-	        			if (deleteresult == 0){
-	        				forward_to(message_to_handle, successorName, successor.getmyPort());
-	        			}
-	        			else{
-	        				if (deleteresult ==2){
-	        					String answer = "Deleted song"+ splittedMessage[1];
-	        					forward_to(answer, message[1], PORT_BASE + ring_size);
-	        				}
-	        				else{
-	        					String answer = "Song Doesn't exist :"+ splittedMessage[1];
-	        					forward_to(answer, message[1], PORT_BASE + ring_size);
-	        				}
-	        				
-	        				//System.out.println("Deleted song"+ splittedMessage[1]);
-	        			} 
-	        			if (IamInit){
-	        				 start_listening_for_answers();
-	        			}
-	        		} catch (NoSuchAlgorithmException e) {
+        			int queryresult = -6; 
+        			
+        			if (!(splittedMessage[1].equals("*"))){
+        				try {
+							queryresult = query(splittedMessage[1]);
+						} catch (NoSuchAlgorithmException e) {
+							// TODO Auto-generated catch block
 							e.printStackTrace();
 							System.exit(1);
-	        			}
-	        		
-	        		
+						}
+        				System.out.println(queryresult);
+        				if (queryresult == -2){
+        					// I don't have this but i am responsible for this song
+        					String answer = "responsible node "+myid+" didn't find "+splittedMessage[1];
+        					if (IamInit) System.out.println("Node "+myid+": " +answer);
+        					else {
+            					forward_to("ANSWER-" +answer+"\n", message[1], Integer.parseInt(message[2]));
+
+        					}
+        					//System.out.println(splittedMessage[1]+": Not found");
+        				}
+        				if (queryresult == -1){
+        					//I am not the responsible node to talk about it :/
+        					//ask the next one :(
+        					forward_to(message_to_handle+"\n", successor.getMyname(), successor.getmyPort());
+            				System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());
+        				}
+        				if (queryresult > 0){
+        					//file exists in my list
+        					String answer = "node " + myid + " said 'I've got this song', value = "+queryresult;
+        					if (IamInit) System.out.println("Node "+myid+": " +answer);
+        					else{
+        						forward_to("ANSWER-"+answer+"\n", message[1], Integer.parseInt(message[2]));
+        					}
+        					//System.out.println("Greetings from Node :" + myname + "I've got this song with value"+queryresult);
+        				}
+        				/*if (IamInit){
+	        				 start_listening_for_answers();
+	        			}*/
+        				
+        			}
+        			else{
+        				if (IamInit){
+        					arrived ++;
+        					if (arrived == 2){
+	        					//stop
+	        					// 
+	        					arrived=0;
+	        					System.out.println("I am initial node.. finished");
+	        				}
+        					else{
+        						// I am init and I print my list
+        						for (String key : files.keySet()) {
+            					    System.out.println(key + " " + files.get(key));
+        						}
+            					forward_to(message_to_handle+"\n", successor.getMyname(), successor.getmyPort());
+
+        					}
+        				}
+        				else{
+        					// every node answers with its list
+        				
+        					for (String key : files.keySet()) {
+        						forward_to("ANSWER-"+key + " " + files.get(key)+"\n", message[1], Integer.parseInt(message[2]));
+        					}
+        					
+        					//forward the message to the next node
+        					forward_to(message_to_handle+"\n", successor.getMyname(), successor.getmyPort());
+        				}
+        			}
 	        	}
-	        	
-	        case "JOIN":
-	        	if (message.length != 2){
+	        }
+	        else if (splittedMessage[0].equals("DELETE")) {
+
+	        	if (splittedMessage.length != 2){
 	        		System.err.println("Wrong number of parameters");
 	        	}
 	        	else {
 	        		//do staff
-	        		Node node = new Node("localhost", message[1] ,ring_size);
+	        		//new!!!
 	        		
-	        		
-	        	
-	        	
-	        	}
-
-
-	        
+        			int deleteresult = -6;
+        			try {
+						deleteresult = delete(splittedMessage[1]);
+					} catch (NoSuchAlgorithmException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+        			if (deleteresult == 0){
+        				
+        				// I am not responsible
+        				forward_to(message_to_handle+"\n", successor.getMyname(), successor.getmyPort());
+        			}
+        			else if (deleteresult == 2){
+        				
+        				// I deleted it
+        				String answer = "Deleted song"+ splittedMessage[1];
+    					if (IamInit) System.out.println("Node "+myid+": " +answer);
+    					else{
+    						forward_to("ANSWER-"+answer+"\n", message[1], Integer.parseInt(message[2]));
+    					}
+        			}
+        			else if (deleteresult == 1){
+        				
+        				// Song doesn't exist
+        				String answer = "Song Doesn't exist :"+ splittedMessage[1];
+    					if (IamInit) System.out.println("Node "+myid+": " +answer);
+    					else {
+    						forward_to("ANSWER-"+answer+"\n", message[1], Integer.parseInt(message[2]));
+    					}
+        			}		
+	        	}		
+	        }
+	        else if (splittedMessage[0].equals("DEPART")) {
+	        	System.out.println("Node "+myid+": in depart");
+	        	for (String key : files.keySet()) {
+					forward_to("GET_MY_STUFF-"+key + "," + files.get(key)+"\n", successor.getMyname(), successor.getmyPort());
+					try {
+						sleep(2000);
+					} catch (InterruptedException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+	        	try {
+					serverSocket.close();
+				} catch (IOException e) {
+					System.out.println("Socket couldn't close during depart!");
+				}
+	        	System.out.println("Node "+ myid+": closed socket");
+	        	break;
+	        }
+	        else if (splittedMessage[0].equals("GET_MY_STUFF")) {
+	        	String key = message[1].split(",")[0];
+	        	int value = Integer.parseInt(message[1].split(",")[1]);
+	        	files.put(key, value);
+	        }
+		
+	        try {
+	        	serverSocket.close();
+	        } catch (IOException e) {
+	        	// TODO Auto-generated catch block
+	        	e.printStackTrace();
 	        }
 		}
-		
-    	
-		// DOka <3
-		//Creates a socket address from a hostname and a port number.
-
-		//myAddress = new InetSocketAddress(hostname , port);
-		
 	}
 
 	// used to sort nodes after every join or depart in main 
 	@Override
 	public int compareTo(Node nd) {
-		int compareId = (int) nd.getId();
+		int compareId = (int) nd.getmyId();
 		//ascending order
-		return (int) (this.getId() - compareId);
+		return (int) (this.getmyId() - compareId);
 		
 	}
 	
@@ -382,12 +430,13 @@ public class Node extends Thread implements Comparable<Node> {
 			bw.write(message);
             bw.flush();
 		} catch (IOException e) {
-			System.out.println("Couldn't write to BufferWriter");
+			System.out.println("Node "+myid+": Couldn't write to BufferWriter");
+			e.printStackTrace();
 			System.exit(1);
-		}		
+		}
 	}
 
-	public void start_listening_for_answers(){
+	/*public void start_listening_for_answers(){
 		ServerSocket serverSocket = null;
 		InputStream is = null;
 		InputStreamReader isr;
@@ -424,8 +473,8 @@ public class Node extends Thread implements Comparable<Node> {
 			System.err.println("ReadLine failed");
             System.exit(1);
 		}
-		System.out.println(answer);
-	}
+		System.out.println("Initial node: "+myid+","+ answer);
+	}*/
 
 	
 
