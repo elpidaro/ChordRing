@@ -519,4 +519,3 @@ public class Node extends Thread implements Comparable<Node> {
 		}
 	}
 }
-//TODO:FTIAKSE TO QUERY NA TIPWNOUN OSOI EXOYN REPLICA TI MALAKIA TOUS.
