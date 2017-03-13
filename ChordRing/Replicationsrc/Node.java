@@ -90,7 +90,7 @@ public class Node extends Thread implements Comparable<Node> {
 		int song_id = ChordRing.calculate_sha1(key, ring_size);
 		int value = -1; // i am not responsible for song
 		if (iAmResponsibleForId(song_id)){
-			System.out.println("Node "+ myid + ": I am responsible for :" + key);
+			System.out.println("Node "+ myid + ": I am responsible for : "+ key);
 			value = -2; // i am responsible, song doesn't exist 
 		}
 			if (files.containsKey(key)){
@@ -208,7 +208,7 @@ public class Node extends Thread implements Comparable<Node> {
 				System.err.println("ReadLine failed");
 	            System.exit(1);
 			}	        
-			System.out.println("Node "+ myid +": Got message: "+ message_to_handle);
+		//	System.out.println("Node "+ myid +": Got message: "+ message_to_handle);
 
 	        // decide if I am the initial node who received the query
 	        
@@ -257,20 +257,38 @@ public class Node extends Thread implements Comparable<Node> {
 	        			if (replica_counter>1){
 	        				replica_counter--;
 	        				forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+	        				try {
+	        		            // thread to sleep for 1000 milliseconds
+	        		            Thread.sleep(1000);
+	        		         } catch (Exception e) {
+	        		            System.out.println(e);
+	        		           }
 	        			}
 	        			String myAnswer = "node "+ myid +" Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2]+")";
 	        			if (IamInit){
 	        				System.out.println("Node "+ myid + ": " + myAnswer);
 	        			}
 	        			else {
-
+	        				System.err.println(myAnswer);
 	        				forward_to("ANSWER-"+myAnswer+"\n",replica_counter, message[2], Integer.parseInt(message[3])); //message[2] is the initial host's name
+	        				try {
+	        		            // thread to sleep for 1000 milliseconds
+	        		            Thread.sleep(1000);
+	        		         } catch (Exception e) {
+	        		            System.out.println(e);
+	        		         }
 	        			}
 	        		}
 	        		else {
 	        			// I didn't do the insert
 	        			forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
-        				System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());	        			
+        				System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());	    
+        				try {
+        		            // thread to sleep for 1000 milliseconds
+        		            Thread.sleep(1000);
+        		         } catch (Exception e) {
+        		            System.out.println(e);
+        		         }
 	        		}
 	        	}
 	        }
@@ -286,52 +304,54 @@ public class Node extends Thread implements Comparable<Node> {
         			if (!(splittedMessage[1].equals("*"))){
         				try {
 							queryresult = query(splittedMessage[1]);
-	        				if (IamInit){
-	        					have_arrived ++;
-	        					if (have_arrived == 2){
-		        					have_arrived=0;
-	        					}
-	        					else{
-		        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
-	        					}
-	        				}
-	        				else {
-	        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
-	        				}
-	        			} catch (NoSuchAlgorithmException e) {
+	        			}
+        				catch (NoSuchAlgorithmException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 							System.exit(1);
 						}
-        				System.out.println(queryresult);
+        	//			if(queryresult>0){
+//DEBUGGING     			System.out.println(queryresult);
+        		//		}
+        				if (queryresult == -1){
+        					//I am not the responsible node to talk about it :/
+        					//ask the next one :(
+        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+            				System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());
+        				}
         				if (queryresult == -2){
         					// I don't have this but i am responsible for this song
         					String answer = "responsible node "+myid+" didn't find "+splittedMessage[1];
         					if (IamInit) System.out.println("Node "+myid+": " +answer);
         					else {
-            					forward_to("ANSWER-" +answer+"\n",replica_counter, message[1], Integer.parseInt(message[2]));
-
+            					forward_to("ANSWER-" +answer+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
+            					try {
+            			            // thread to sleep for 1000 milliseconds
+            			            Thread.sleep(1000);
+            			         } catch (Exception e) {
+            			            System.out.println(e);
+            			         }
         					}
         					System.out.println(splittedMessage[1]+": Not found");
         				}
-        			//	if (queryresult == -1){
-        					//I am not the responsible node to talk about it :/
-        					//ask the next one :(
-        				//	forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
-            				//System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());
-        			//	}
         				if (queryresult > 0){
         					//file exists in my list
         					String answer = "node " + myid + " said 'I've got this song', value = "+queryresult;
+        					replica_counter--;
+        					if(!(replica_counter==0)){
+        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+        					}
         					if (IamInit) System.out.println("Node "+myid+": " +answer);
         					else{
         						forward_to("ANSWER-"+answer+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
+        						try {
+        				            // thread to sleep for 1000 milliseconds
+        				            Thread.sleep(1000);
+        				         } catch (Exception e) {
+        				            System.out.println(e);
+        				         }
         					}
-        					//System.out.println("Greetings from Node :" + myname + "I've got this song with value"+queryresult);
         				}
-        				/*if (IamInit){
-	        				 start_listening_for_answers();
-	        			}*/
         				
         			}
         			else{
@@ -349,7 +369,12 @@ public class Node extends Thread implements Comparable<Node> {
             					    System.out.println(key + " " + files.get(key));
         						}
             					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
-
+            					try {
+            			            // thread to sleep for 1000 milliseconds
+            			            Thread.sleep(1000);
+            			         } catch (Exception e) {
+            			            System.out.println(e);
+            			         }
         					}
         				}
         				else{
@@ -357,6 +382,12 @@ public class Node extends Thread implements Comparable<Node> {
         				
         					for (String key : files.keySet()) {
         						forward_to("ANSWER-"+key + " " + files.get(key)+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
+        						try {
+        				            // thread to sleep for 1000 milliseconds
+        				            Thread.sleep(1000);
+        				         } catch (Exception e) {
+        				            System.out.println(e);
+        				         }
         					}
         					
         					//forward the message to the next node
@@ -371,9 +402,6 @@ public class Node extends Thread implements Comparable<Node> {
 	        		System.err.println("Wrong number of parameters");
 	        	}
 	        	else {
-	        		//do staff
-	        		//new!!!
-	        		
         			int deleteresult = -6;
         			try {
 						deleteresult = delete(splittedMessage[1]);
@@ -385,6 +413,12 @@ public class Node extends Thread implements Comparable<Node> {
         				
         				// I am not responsible
         				forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+        				try {
+        		            // thread to sleep for 1000 milliseconds
+        		            Thread.sleep(1000);
+        		         } catch (Exception e) {
+        		            System.out.println(e);
+        		         }
         			}
         			else if (deleteresult == 2){
         				
@@ -393,6 +427,12 @@ public class Node extends Thread implements Comparable<Node> {
     					if (IamInit) System.out.println("Node "+myid+": " +answer);
     					else{
     						forward_to("ANSWER-"+answer+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
+    						try {
+    				            // thread to sleep for 1000 milliseconds
+    				            Thread.sleep(1000);
+    				         } catch (Exception e) {
+    				            System.out.println(e);
+    				         }
     					}
         			}
         			else if (deleteresult == 1){
@@ -402,6 +442,12 @@ public class Node extends Thread implements Comparable<Node> {
     					if (IamInit) System.out.println("Node "+myid+": " +answer);
     					else {
     						forward_to("ANSWER-"+answer+"\n",replica_counter, message[1], Integer.parseInt(message[2]));
+    						try {
+    				            // thread to sleep for 1000 milliseconds
+    				            Thread.sleep(1000);
+    				         } catch (Exception e) {
+    				            System.out.println(e);
+    				         }
     					}
         			}		
 	        	}		
@@ -440,6 +486,12 @@ public class Node extends Thread implements Comparable<Node> {
 							if (ChordRing.calculate_sha1(key, ring_size) <= predecessor.getmyId()){
 								forward_to("GET_MY_STUFF-"+key + "," + files.get(key)+"\n",replica_counter, predecessor.getMyname(), predecessor.getmyPort());
 								to_remove.add(key);
+								try {
+						            // thread to sleep for 1000 milliseconds
+						            Thread.sleep(1000);
+						         } catch (Exception e) {
+						            System.out.println(e);
+						         }
 							}
 						} catch (NoSuchAlgorithmException e1) {
 							// TODO Auto-generated catch block
@@ -458,7 +510,13 @@ public class Node extends Thread implements Comparable<Node> {
 	        	}
 	        	else {
     				forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
-				}
+    				try {
+    		            // thread to sleep for 1000 milliseconds
+    		            Thread.sleep(1000);
+    		         } catch (Exception e) {
+    		            System.out.println(e);
+    		         }
+	        	}
 	        }
 		
 	        try {
