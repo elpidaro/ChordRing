@@ -21,7 +21,6 @@ public class Node extends Thread implements Comparable<Node> {
 	private int global_rep;
 	int ring_size;
 	private int arrived = 0;
-	private int have_arrived = 0;
 	private boolean IamInit = false;
 	Map<String, Integer> files = new HashMap<>();
 	
@@ -143,7 +142,14 @@ public class Node extends Thread implements Comparable<Node> {
 				answer = 1; // The song does not exist
 		
 			}
+		
 		}
+			if (files.containsKey(key)){
+				// delete
+				files.remove(key);
+				answer = 2; //I had the song and i deleted it
+			}
+
 		return answer;
 	}
 	
@@ -208,7 +214,7 @@ public class Node extends Thread implements Comparable<Node> {
 				System.err.println("ReadLine failed");
 	            System.exit(1);
 			}	        
-		//	System.out.println("Node "+ myid +": Got message: "+ message_to_handle);
+		//	System.out.println("Node "+ myid +": Got message: "+ message_to_handle); //DEBUGGING
 
 	        // decide if I am the initial node who received the query
 	        
@@ -269,7 +275,7 @@ public class Node extends Thread implements Comparable<Node> {
 	        				System.out.println("Node "+ myid + ": " + myAnswer);
 	        			}
 	        			else {
-	        				System.err.println(myAnswer);
+	        				System.err.println(myAnswer); //DEBUGGING
 	        				forward_to("ANSWER-"+myAnswer+"\n",replica_counter, message[2], Integer.parseInt(message[3])); //message[2] is the initial host's name
 	        				try {
 	        		            // thread to sleep for 1000 milliseconds
@@ -423,7 +429,12 @@ public class Node extends Thread implements Comparable<Node> {
         			else if (deleteresult == 2){
         				
         				// I deleted it
-        				String answer = "Deleted song"+ splittedMessage[1];
+        				String answer = "Deleted song "+myid+" "+ splittedMessage[1];
+        				System.err.println(answer);
+        				replica_counter--;
+        				if(!(replica_counter==0)){
+            				forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+        				}
     					if (IamInit) System.out.println("Node "+myid+": " +answer);
     					else{
     						forward_to("ANSWER-"+answer+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
@@ -441,7 +452,7 @@ public class Node extends Thread implements Comparable<Node> {
         				String answer = "Song Doesn't exist :"+ splittedMessage[1];
     					if (IamInit) System.out.println("Node "+myid+": " +answer);
     					else {
-    						forward_to("ANSWER-"+answer+"\n",replica_counter, message[1], Integer.parseInt(message[2]));
+    						forward_to("ANSWER-"+answer+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
     						try {
     				            // thread to sleep for 1000 milliseconds
     				            Thread.sleep(1000);
