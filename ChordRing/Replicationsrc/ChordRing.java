@@ -89,7 +89,7 @@ public class ChordRing {
 		int number_of_replicas =3;
 		List<Node> nodelist = new ArrayList<Node>();
 		
-		System.out.printf("Initial number of nodes: %d and ring size: %d\n",number_of_nodes,ring_size);
+		System.out.printf("Initial number of nodes: %d ring size: %d replication factor: %d\n",number_of_nodes,ring_size,number_of_replicas);
 		
 		// create initial ring
 		for (globalc=1; globalc<=number_of_nodes; globalc++){
