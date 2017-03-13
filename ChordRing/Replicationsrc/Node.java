@@ -214,13 +214,11 @@ public class Node extends Thread implements Comparable<Node> {
 	        String[] message = message_to_handle.split("-");
 	        String theQuery = message[0]; // keeps what the user entered
 
-	        //EDO IPOLOGIZETAI O REPLICA COUNTER
 	        if (!(theQuery.equals("ANSWER"))){
 	        replica_counter=calculate_replicas_number(message[1]);
-			System.out.println("Replica_counter="+replica_counter);
+			System.out.println("Node "+ myid +":"+" Replica_counter is now "+replica_counter);
 	        }
 
-	        //------------//
 	     // Check if it is an answer
 	        if (theQuery.equals("ANSWER")){
 	        	System.out.println("Node "+myid+": "+message[1]);
@@ -232,8 +230,8 @@ public class Node extends Thread implements Comparable<Node> {
 	        	continue;
 	        }
 	        
-	        if (message.length == 3){
-	        	if (Integer.parseInt(message[2]) == myport){ // message[2] is the initial host's port
+	        if (message.length == 4){
+	        	if (Integer.parseInt(message[3]) == myport){ // message[2] is the initial host's port
 	        		// I am the initial node
 	        		IamInit = true;
 	        	}
@@ -260,7 +258,6 @@ public class Node extends Thread implements Comparable<Node> {
 	        				forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
 	        			}
 	        			String myAnswer = "node "+ myid +" Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2]+")";
-	        			System.out.println("Malakia " +myAnswer);
 	        			if (IamInit){
 	        				System.out.println("Node "+ myid + ": " + myAnswer);
 	        			}
@@ -510,4 +507,3 @@ public class Node extends Thread implements Comparable<Node> {
 	}
 }
 //TODO:FTIAKSE TO QUERY NA TIPWNOUN OSOI EXOYN REPLICA TI MALAKIA TOUS.
-//TODO:DIORTHOSE TO QUERY,* NA MI SKAEI
