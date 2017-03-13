@@ -21,6 +21,7 @@ public class Node extends Thread implements Comparable<Node> {
 	private int global_rep;
 	int ring_size;
 	private int arrived = 0;
+	private int have_arrived = 0;
 	private boolean IamInit = false;
 	Map<String, Integer> files = new HashMap<>();
 	
@@ -91,10 +92,10 @@ public class Node extends Thread implements Comparable<Node> {
 		if (iAmResponsibleForId(song_id)){
 			System.out.println("Node "+ myid + ": I am responsible for :" + key);
 			value = -2; // i am responsible, song doesn't exist 
+		}
 			if (files.containsKey(key)){
 				value = files.get(key); // song exists in my list --> value >= 0 returned
 			}
-		}
 		return value;
 	}
 	
@@ -285,7 +286,19 @@ public class Node extends Thread implements Comparable<Node> {
         			if (!(splittedMessage[1].equals("*"))){
         				try {
 							queryresult = query(splittedMessage[1]);
-						} catch (NoSuchAlgorithmException e) {
+	        				if (IamInit){
+	        					have_arrived ++;
+	        					if (have_arrived == 2){
+		        					have_arrived=0;
+	        					}
+	        					else{
+		        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+	        					}
+	        				}
+	        				else {
+	        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+	        				}
+	        			} catch (NoSuchAlgorithmException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 							System.exit(1);
@@ -301,12 +314,12 @@ public class Node extends Thread implements Comparable<Node> {
         					}
         					System.out.println(splittedMessage[1]+": Not found");
         				}
-        				if (queryresult == -1){
+        			//	if (queryresult == -1){
         					//I am not the responsible node to talk about it :/
         					//ask the next one :(
-        					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
+        				//	forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
             				//System.out.println("Node "+myid+": I forwarded the query to "+successor.getMyname()+":"+successor.getmyPort());
-        				}
+        			//	}
         				if (queryresult > 0){
         					//file exists in my list
         					String answer = "node " + myid + " said 'I've got this song', value = "+queryresult;
