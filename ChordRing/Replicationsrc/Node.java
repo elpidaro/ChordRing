@@ -245,7 +245,7 @@ public class Node extends Thread implements Comparable<Node> {
 	        }
 	        String []splittedMessage = theQuery.split(",");
 	        // decide what to do according to the type of query
-	        if (splittedMessage[0].equals("INSERT")) {
+	        if (splittedMessage[0].equals("insert")) {
 	        	if (splittedMessage.length != 3){
 	        		System.err.println("Wrong number of parameters");
 	        	}
@@ -306,7 +306,7 @@ public class Node extends Thread implements Comparable<Node> {
 	        		}
 	        	}
 	        }
-	        else if (splittedMessage[0].equals("QUERY")) {
+	        else if (splittedMessage[0].equals("query")) {
 
 	        	if (splittedMessage.length != 2){
 	        		System.err.println("Wrong number of parameters");
@@ -412,7 +412,7 @@ public class Node extends Thread implements Comparable<Node> {
         			}
 	        	}
 	        }
-	        else if (splittedMessage[0].equals("DELETE")) {
+	        else if (splittedMessage[0].equals("delete")) {
 
 	        	if (splittedMessage.length != 2){
 	        		System.err.println("Wrong number of parameters");
@@ -473,7 +473,7 @@ public class Node extends Thread implements Comparable<Node> {
         			}		
 	        	}		
 	        }
-	        else if (splittedMessage[0].equals("DEPART")) {
+	        else if (splittedMessage[0].equals("depart")) {
 	        	System.out.println("Node "+myid+": in depart");
 	        	for (String key : files.keySet()) {
 					forward_to("GET_MY_STUFF-"+key + "," + files.get(key)+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
