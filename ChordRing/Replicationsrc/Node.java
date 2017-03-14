@@ -269,6 +269,13 @@ public class Node extends Thread implements Comparable<Node> {
 	        		         } catch (Exception e) {
 	        		            System.out.println(e);
 	        		           }
+	        			}else{
+	     					try {
+        		            // thread to sleep for 1000 milliseconds
+        		            Thread.sleep(1000);
+	     					} catch (Exception e) {
+	     						System.out.println(e);
+        		           }
 	        			}
 	        			String myAnswer = "node "+ myid +" Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2]+")";
 	        			if (IamInit){
@@ -347,6 +354,7 @@ public class Node extends Thread implements Comparable<Node> {
         					if(!(replica_counter==0)){
         					forward_to(message_to_handle+"\n",replica_counter, successor.getMyname(), successor.getmyPort());
         					}
+        					if (replica_counter==0){ //ayti i entoli einai ipefthini wste mono o teleytaios na leei i've got the song (vlepe chain replication)
         					if (IamInit) System.out.println("Node "+myid+": " +answer);
         					else{
         						forward_to("ANSWER-"+answer+"\n",replica_counter, message[2], Integer.parseInt(message[3]));
@@ -356,6 +364,7 @@ public class Node extends Thread implements Comparable<Node> {
         				         } catch (Exception e) {
         				            System.out.println(e);
         				         }
+        					}
         					}
         				}
         				
