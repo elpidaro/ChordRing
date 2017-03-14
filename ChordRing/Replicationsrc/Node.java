@@ -279,6 +279,7 @@ public class Node extends Thread implements Comparable<Node> {
 	        			}
 	        			String myAnswer = "node "+ myid +" Inserted pair ("+ splittedMessage[1] + "," + splittedMessage[2]+")";
 	        			if (IamInit){
+	        				System.err.println(myAnswer); //DEBUGGING
 	        				System.out.println("Node "+ myid + ": " + myAnswer);
 	        			}
 	        			else {
