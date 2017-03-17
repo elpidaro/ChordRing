@@ -13,16 +13,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-
+//import java.lang.StringBuilder;
 /*
  * COMMAND EXAMPLES:
- * INSERT,eimaste omadara,100
- * INSERT,Love is in the air,97
- * QUERY,eimaste omadara
- * DEPART,708
- * DELETE,Love is in the air
- * DELETE,akuro_pou_den_uparxei
- * QUERY,*
+ * insert,eimaste omadara,100
+ * insert,Love is in the air,97
+ * query,eimaste omadara
+ * depart,708
+ * delete,Love is in the air
+ * delete,akuro_pou_den_uparxei
+ * query,*
  */
 
 public class ChordRing {
@@ -41,17 +41,24 @@ public class ChordRing {
 
 	}
 	
-	public static void main_forward_to(String message, String hostname, int port){
+	public static void main_forward_to(String message, int replicas, String hostname, int port){
+		//System.err.println(message);
+		String message_final;
+		String []message_with_replicas = message.split("-");
+		if (message_with_replicas.length >= 3 ) message_final = message_with_replicas[0]+"-"+replicas+"-"+message_with_replicas[1]+"-"+message_with_replicas[2];
+		else message_final = message;
 		Socket socket = null;
 		try {
 			socket = new Socket(hostname, port);
 		} 
 		catch (UnknownHostException e) {
 		     System.out.println("Unknown host");
+		     e.printStackTrace();
 		     System.exit(1);
 		}
 		catch (IOException e) {
 			System.out.println("Cannot use this port");
+			e.printStackTrace();
 		    System.exit(1);
 		}
 		OutputStream os = null;
@@ -59,15 +66,17 @@ public class ChordRing {
 			os = socket.getOutputStream();
 		} catch (IOException e) {
 			System.out.println("Couldn't get output stream");
+			e.printStackTrace();
 			System.exit(1);
 		}
         OutputStreamWriter osw = new OutputStreamWriter(os);
         BufferedWriter bw = new BufferedWriter(osw);
         try {
-        	bw.write(message);
+        	bw.write(message_final);
             bw.flush();
 		} catch (IOException e) {
 			System.out.println("Couldn't write to BufferWriter");
+			e.printStackTrace();
 			System.exit(1);
 		}		
 	}
@@ -77,25 +86,27 @@ public class ChordRing {
 		
 		BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
 		//System.out.println("Please enter the <number of desired nodes>: ");
-		int number_of_nodes = 5;//Integer.parseInt(input.readLine());
+		int number_of_nodes = 10;//Integer.parseInt(input.readLine());
 		//System.out.println("Please enter the <log of ring size>: ");
-		int M = 10; //Integer.parseInt(input.readLine());
+		int M = 6; //Integer.parseInt(input.readLine());
 		double ring = Math.pow(2,M);
 		int ring_size = (int) Math.round(ring);
 		int globalc; // global node counter
+		//Number of replicas
+		int k = 5;
 		List<Node> nodelist = new ArrayList<Node>();
 		
-		System.out.printf("Initial number of nodes: %d and ring size: %d\n",number_of_nodes,ring_size);
+		System.out.printf("Initial number of nodes: %d ring size: %d replication factor: %d\n",number_of_nodes,ring_size,k);
 		
 		// create initial ring
 		for (globalc=1; globalc<=number_of_nodes; globalc++){
-			Node n = new Node("localhost", Integer.toString(globalc), ring_size);
+			Node n = new Node("localhost", Integer.toString(globalc), ring_size ,k);
 			nodelist.add(n);
 		}
 		fix_nodes(nodelist);
-		for (Node n: nodelist){
+		/*(for (Node n: nodelist){
 			System.out.println(n.getmyId());
-		}
+		}*/
 		for (Node n: nodelist){
 			n.start();
 		}
@@ -106,13 +117,16 @@ public class ChordRing {
 		}
 		while(true){
 			System.out.println("Type your command: ");
-			String command = input.readLine();			
-			String option = command.split(",")[0]; //INSERT,QUERY,DELETE,JOIN,DEPART
-			if (option.equals("INSERT") || option.equals("DELETE") || option.equals("QUERY")) {
+			String command = input.readLine();	
+			//System.out.println("command IS: "+ command);
+			String option = command.split(",")[0]; //insert,query,delete,join,depart
+			if (option.equals("insert") || option.equals("delete") || option.equals("query")) {
 				int len = nodelist.size();
-				int randomNum = ThreadLocalRandom.current().nextInt(1, len);
+				
+				int randomNum = ThreadLocalRandom.current().nextInt(0, len-1);
 				Node init = nodelist.get(randomNum);
-				main_forward_to(command + "-" + init.getMyname()+"-"+ init.getmyPort()+"\n", init.getMyname(), init.getmyPort());
+				main_forward_to(command + "-" + init.getMyname()+"-"+ init.getmyPort()+"\n", k, init.getMyname(), init.getmyPort());
+			//	main_forward_to("join-"+n.successor.getmyId() +"\n", k, nodelist.get(0).getMyname(), nodelist.get(0).getmyPort());
 				System.out.println("Main says: I forwarded the command to Node with ID: " + init.getmyId());
 				try {
 					Thread.sleep(5000);
@@ -121,7 +135,7 @@ public class ChordRing {
 				}
 			
 			}
-			else if (option.equals("DEPART")){
+			else if (option.equals("depart")){
 				Node node_to_delete = null;
 				int idToDelete = Integer.parseInt(command.split(",")[1]);
 				// Check if node with this ID exists
@@ -129,7 +143,7 @@ public class ChordRing {
 					if (n.getmyId() == idToDelete){
 						node_to_delete = n;
 						// send the depart massage
-						main_forward_to("DEPART\n", node_to_delete.getMyname(), node_to_delete.getmyPort());
+						main_forward_to("depart\n",k, node_to_delete.getMyname(), node_to_delete.getmyPort());
 						try {
 							Thread.sleep(4000);
 						} catch (InterruptedException e) {
@@ -147,19 +161,22 @@ public class ChordRing {
 					fix_nodes(nodelist);
 				}
 			}
-			else if (option.equals("JOIN")){
-				Node n = new Node("localhost",Integer.toString(globalc), ring_size);
+			else if (option.equals("join")){
+				Node n = new Node("localhost",Integer.toString(globalc), ring_size,k);
 				nodelist.add(n);
 				fix_nodes(nodelist);
 				n.start();
-				// sends JOIN-successorID
-				main_forward_to("JOIN-"+n.successor.getmyId() +"\n", nodelist.get(0).getMyname(), nodelist.get(0).getmyPort());
+				// sends join-successorID
+				main_forward_to("join-"+n.successor.getmyId() +"\n", k, nodelist.get(0).getMyname(), nodelist.get(0).getmyPort());
+
 				try {
 					Thread.sleep(8000);
 				} catch (InterruptedException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
+				globalc++;
+
 			}
 			
 		}
